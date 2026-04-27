@@ -183,7 +183,7 @@ def main():
     report_gen = ReportGenerator()
     
     with tab1:
-        upload_data_tab(parser)
+        upload_data_tab(parser, classifier)
     
     with tab2:
         if st.session_state.classified_df is not None:
@@ -209,37 +209,59 @@ def main():
         else:
             st.info("请先上传并处理账单数据")
 
-def upload_data_tab(parser: CSVParser):
+def upload_data_tab(parser: CSVParser, classifier: TransactionClassifier):
     st.markdown('<h2 class="sub-header">📁 上传账单数据</h2>', unsafe_allow_html=True)
     
-    col1, col2 = st.columns([3, 1])
+    st.markdown("### 方式一：上传您的 CSV 账单文件")
+    st.caption("支持各大银行和信用卡导出的标准 CSV 流水格式")
     
-    with col1:
-        uploaded_file = st.file_uploader(
-            "上传银行/信用卡 CSV 流水文件",
-            type=['csv'],
-            help="支持各大银行的标准 CSV 流水格式"
-        )
-    
-    with col2:
-        st.markdown("### 或")
-        use_sample = st.button("使用示例数据", type="primary")
+    uploaded_file = st.file_uploader(
+        "选择 CSV 文件",
+        type=['csv'],
+        help="文件应包含：日期、交易描述/摘要、金额、收支类型等列",
+        label_visibility="collapsed"
+    )
     
     if uploaded_file is not None:
         try:
             with st.spinner("正在解析数据..."):
                 df = parser.parse_csv(uploaded_file)
                 process_data(df, parser, classifier)
-            st.success("数据处理完成！")
+            st.success(f"✅ 数据处理完成！共 {len(df)} 条记录")
         
         except Exception as e:
-            st.error(f"数据解析失败: {str(e)}")
+            st.error(f"❌ 数据解析失败: {str(e)}")
     
-    if use_sample:
-        with st.spinner("正在加载示例数据..."):
-            sample_df = parser.get_sample_data()
-            process_data(sample_df, parser, classifier)
-        st.success("示例数据加载完成！")
+    st.markdown("---")
+    
+    st.markdown("### 方式二：使用示例数据体验")
+    st.caption("点击下方按钮加载预设的示例账单数据，快速体验所有功能")
+    
+    col1, col2, col3 = st.columns([1, 2, 1])
+    
+    with col2:
+        use_sample = st.button(
+            "📊 加载示例数据", 
+            type="primary",
+            use_container_width=True
+        )
+        
+        if use_sample:
+            with st.spinner("正在加载示例数据..."):
+                sample_df = parser.get_sample_data()
+                process_data(sample_df, parser, classifier)
+            st.success("✅ 示例数据加载完成！")
+    
+    st.markdown("""
+    <div style="background-color: #f0f8ff; padding: 1rem; border-radius: 10px; margin-top: 1rem;">
+        <h4 style="margin: 0 0 0.5rem 0; color: #1f77b4;">💡 提示</h4>
+        <ul style="margin: 0; padding-left: 1.5rem;">
+            <li>示例数据包含各种消费类型、异常消费和拿铁因子场景</li>
+            <li>您可以先使用示例数据熟悉功能，再上传自己的账单</li>
+            <li>支持的银行：招商银行、工商银行、建设银行、支付宝、微信支付等导出的 CSV</li>
+        </ul>
+    </div>
+    """, unsafe_allow_html=True)
     
     if st.session_state.df is not None:
         st.markdown("---")
