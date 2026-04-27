@@ -183,7 +183,7 @@ def main():
     report_gen = ReportGenerator()
     
     with tab1:
-        upload_data_tab(parser, classifier)
+        upload_data_tab(parser)
     
     with tab2:
         if st.session_state.classified_df is not None:
@@ -209,7 +209,7 @@ def main():
         else:
             st.info("请先上传并处理账单数据")
 
-def upload_data_tab(parser: CSVParser, classifier: TransactionClassifier):
+def upload_data_tab(parser: CSVParser):
     st.markdown('<h2 class="sub-header">📁 上传账单数据</h2>', unsafe_allow_html=True)
     
     st.markdown("### 方式一：上传您的 CSV 账单文件")
@@ -226,7 +226,7 @@ def upload_data_tab(parser: CSVParser, classifier: TransactionClassifier):
         try:
             with st.spinner("正在解析数据..."):
                 df = parser.parse_csv(uploaded_file)
-                process_data(df, parser, classifier)
+                process_data(df)
             st.success(f"✅ 数据处理完成！共 {len(df)} 条记录")
         
         except Exception as e:
@@ -249,7 +249,7 @@ def upload_data_tab(parser: CSVParser, classifier: TransactionClassifier):
         if use_sample:
             with st.spinner("正在加载示例数据..."):
                 sample_df = parser.get_sample_data()
-                process_data(sample_df, parser, classifier)
+                process_data(sample_df)
             st.success("✅ 示例数据加载完成！")
     
     st.markdown("""
@@ -278,8 +278,10 @@ def upload_data_tab(parser: CSVParser, classifier: TransactionClassifier):
         
         st.info(f"共 {len(st.session_state.df)} 条记录")
 
-def process_data(df: pd.DataFrame, parser: CSVParser, classifier: TransactionClassifier):
+def process_data(df: pd.DataFrame):
     st.session_state.df = df
+    
+    classifier = TransactionClassifier()
     
     with st.spinner("正在分类交易..."):
         classified_df = classifier.classify_transactions(df)
@@ -300,6 +302,8 @@ def process_data(df: pd.DataFrame, parser: CSVParser, classifier: TransactionCla
         anomalies_df, anomalies_summary = detector.detect_anomalies(classified_df)
         st.session_state.anomalies_df = anomalies_df
         st.session_state.anomalies_summary = anomalies_summary
+    
+    report_gen = ReportGenerator()
     
     with st.spinner("正在生成报告..."):
         forecast_data = report_gen.generate_trend_forecast(classified_df)
