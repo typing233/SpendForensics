@@ -36,6 +36,45 @@ const SEASON_COLORS = {
   winter: { main: '#3b82f6', light: '#1d4ed8', glow: 'rgba(59, 130, 246, 0.5)' }
 };
 
+function splitIntoContinuousRanges(indices, totalCount = 24) {
+  if (!indices || indices.length === 0) return [];
+  
+  const sorted = [...indices].sort((a, b) => a - b);
+  const ranges = [];
+  
+  let hasCrossZero = sorted[0] === 0 && sorted[sorted.length - 1] === totalCount - 1;
+  
+  if (hasCrossZero) {
+    let highStart = 0;
+    while (highStart < sorted.length && sorted[highStart] < totalCount / 2) {
+      highStart++;
+    }
+    
+    if (highStart < sorted.length) {
+      ranges.push({ start: sorted[highStart], end: sorted[sorted.length - 1] });
+    }
+    if (highStart > 0) {
+      ranges.push({ start: sorted[0], end: sorted[highStart - 1] });
+    }
+  } else {
+    let currentStart = sorted[0];
+    let currentEnd = sorted[0];
+    
+    for (let i = 1; i < sorted.length; i++) {
+      if (sorted[i] === currentEnd + 1) {
+        currentEnd = sorted[i];
+      } else {
+        ranges.push({ start: currentStart, end: currentEnd });
+        currentStart = sorted[i];
+        currentEnd = sorted[i];
+      }
+    }
+    ranges.push({ start: currentStart, end: currentEnd });
+  }
+  
+  return ranges;
+}
+
 function SolarTermsChart({ solarTermsData }) {
   const svgRef = useRef(null);
   const [selectedTerm, setSelectedTerm] = useState(null);
@@ -109,43 +148,84 @@ function SolarTermsChart({ solarTermsData }) {
       seasonGroups[d.season].push(i);
     });
 
-    const seasonLabels = Object.entries(seasonGroups).map(([season, indices]) => {
-      const minIdx = Math.min(...indices);
-      const maxIdx = Math.max(...indices);
-      const startAngle = getStartAngle(minIdx);
-      const endAngle = getEndAngle(maxIdx);
-      const midAngle = (startAngle + endAngle) / 2;
+    Object.entries(seasonGroups).forEach(([season, indices]) => {
+      const ranges = splitIntoContinuousRanges(indices, N);
+      
       const seasonName = season === 'spring' ? '春' : 
                         season === 'summer' ? '夏' : 
                         season === 'autumn' ? '秋' : '冬';
-      return { name: seasonName, season, startAngle, endAngle, midAngle };
-    });
-
-    seasonLabels.forEach(sl => {
-      const labelRadius = outerRadius + 45;
-      const x = Math.cos(sl.midAngle) * labelRadius;
-      const y = Math.sin(sl.midAngle) * labelRadius;
       
-      const seasonArc = d3.arc()
-        .innerRadius(outerRadius + 25)
-        .outerRadius(outerRadius + 30)
-        .startAngle(sl.startAngle)
-        .endAngle(sl.endAngle);
+      let labelMidAngle = null;
+      
+      if (ranges.length === 1) {
+        const startAngle = getStartAngle(ranges[0].start);
+        const endAngle = getEndAngle(ranges[0].end);
+        labelMidAngle = (startAngle + endAngle) / 2;
+        
+        const seasonArc = d3.arc()
+          .innerRadius(outerRadius + 25)
+          .outerRadius(outerRadius + 30)
+          .startAngle(startAngle)
+          .endAngle(endAngle);
 
-      mainGroup.append('path')
-        .attr('d', seasonArc)
-        .attr('fill', SEASON_COLORS[sl.season].main)
-        .attr('opacity', 0.8);
+        mainGroup.append('path')
+          .attr('d', seasonArc)
+          .attr('fill', SEASON_COLORS[season].main)
+          .attr('opacity', 0.8);
+      } else {
+        let totalAngleSpan = 0;
+        let weightedSum = 0;
+        
+        ranges.forEach(range => {
+          const startAngle = getStartAngle(range.start);
+          const endAngle = getEndAngle(range.end);
+          
+          const seasonArc = d3.arc()
+            .innerRadius(outerRadius + 25)
+            .outerRadius(outerRadius + 30)
+            .startAngle(startAngle)
+            .endAngle(endAngle);
 
-      mainGroup.append('text')
-        .attr('x', x)
-        .attr('y', y)
-        .attr('text-anchor', 'middle')
-        .attr('dominant-baseline', 'middle')
-        .attr('fill', SEASON_COLORS[sl.season].main)
-        .attr('font-size', '18px')
-        .attr('font-weight', 'bold')
-        .text(sl.name);
+          mainGroup.append('path')
+            .attr('d', seasonArc)
+            .attr('fill', SEASON_COLORS[season].main)
+            .attr('opacity', 0.8);
+          
+          let span = endAngle - startAngle;
+          if (span < 0) span += 2 * Math.PI;
+          
+          let midAngle = (startAngle + endAngle) / 2;
+          if (range.start === 0 && range.end < 10) {
+            midAngle = midAngle + 2 * Math.PI;
+          }
+          
+          weightedSum += midAngle * span;
+          totalAngleSpan += span;
+        });
+        
+        if (totalAngleSpan > 0) {
+          labelMidAngle = weightedSum / totalAngleSpan;
+          if (labelMidAngle > 2 * Math.PI) {
+            labelMidAngle -= 2 * Math.PI;
+          }
+        }
+      }
+      
+      if (labelMidAngle !== null) {
+        const labelRadius = outerRadius + 45;
+        const x = Math.cos(labelMidAngle) * labelRadius;
+        const y = Math.sin(labelMidAngle) * labelRadius;
+
+        mainGroup.append('text')
+          .attr('x', x)
+          .attr('y', y)
+          .attr('text-anchor', 'middle')
+          .attr('dominant-baseline', 'middle')
+          .attr('fill', SEASON_COLORS[season].main)
+          .attr('font-size', '18px')
+          .attr('font-weight', 'bold')
+          .text(seasonName);
+      }
     });
 
     const backgroundArc = d3.arc()

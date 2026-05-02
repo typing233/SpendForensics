@@ -139,6 +139,7 @@ class AnalysisService {
         name: term.name,
         nameEn: term.nameEn,
         date: term.date,
+        season: term.season,
         totalAmount: totalAmount,
         transactionCount: termTransactions.length,
         transactions: termTransactions
@@ -182,24 +183,49 @@ class AnalysisService {
     const day = date.getDate();
     const dayOfYear = month * 100 + day;
 
-    let bestTerm = solarTerms[0];
-    let bestTermDayOfYear = this._dateToDayOfYear(solarTerms[0].date);
+    let bestTerm = null;
+    let bestDiff = Infinity;
 
     for (let i = 0; i < solarTerms.length; i++) {
-      const termDayOfYear = this._dateToDayOfYear(solarTerms[i].date);
-      
-      if (termDayOfYear <= dayOfYear) {
-        if (termDayOfYear >= bestTermDayOfYear || bestTermDayOfYear > dayOfYear) {
+      if (this._isTermBeforeOrEqual(solarTerms[i].date, month, day)) {
+        const termDayOfYear = this._dateToDayOfYear(solarTerms[i].date);
+        const diff = this._calculateDiff(termDayOfYear, dayOfYear, month);
+        
+        if (diff < bestDiff) {
+          bestDiff = diff;
           bestTerm = solarTerms[i];
-          bestTermDayOfYear = termDayOfYear;
         }
-      } else if (bestTermDayOfYear > dayOfYear && termDayOfYear < bestTermDayOfYear) {
-        bestTerm = solarTerms[i];
-        bestTermDayOfYear = termDayOfYear;
       }
     }
 
+    if (!bestTerm) {
+      bestTerm = solarTerms[solarTerms.length - 1];
+    }
+
     return { ...bestTerm, index: bestTerm.order };
+  }
+
+  _isTermBeforeOrEqual(termDateStr, targetMonth, targetDay) {
+    const [tMonth, tDay] = termDateStr.split('-').map(Number);
+    
+    if (targetMonth <= 2 && tMonth >= 10) {
+      return true;
+    }
+    
+    if (targetMonth >= 10 && tMonth <= 2) {
+      return false;
+    }
+    
+    if (tMonth < targetMonth) return true;
+    if (tMonth > targetMonth) return false;
+    return tDay <= targetDay;
+  }
+
+  _calculateDiff(termDayOfYear, targetDayOfYear, targetMonth) {
+    if (targetMonth <= 2 && termDayOfYear >= 1000) {
+      return (targetDayOfYear + 1231) - termDayOfYear;
+    }
+    return targetDayOfYear - termDayOfYear;
   }
 
   _dateToDayOfYear(dateStr) {
