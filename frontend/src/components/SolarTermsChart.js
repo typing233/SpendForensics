@@ -3,30 +3,30 @@ import * as d3 from 'd3';
 import { Calendar, ChevronDown, Info } from 'lucide-react';
 
 const SOLAR_TERMS = [
-  { name: '立春', nameEn: 'Start of Spring', date: '02-04', season: 'spring' },
-  { name: '雨水', nameEn: 'Rain Water', date: '02-19', season: 'spring' },
-  { name: '惊蛰', nameEn: 'Awakening of Insects', date: '03-05', season: 'spring' },
-  { name: '春分', nameEn: 'Spring Equinox', date: '03-20', season: 'spring' },
-  { name: '清明', nameEn: 'Pure Brightness', date: '04-05', season: 'spring' },
-  { name: '谷雨', nameEn: 'Grain Rain', date: '04-20', season: 'spring' },
-  { name: '立夏', nameEn: 'Start of Summer', date: '05-05', season: 'summer' },
-  { name: '小满', nameEn: 'Grain Buds', date: '05-21', season: 'summer' },
-  { name: '芒种', nameEn: 'Grain in Ear', date: '06-05', season: 'summer' },
-  { name: '夏至', nameEn: 'Summer Solstice', date: '06-21', season: 'summer' },
-  { name: '小暑', nameEn: 'Minor Heat', date: '07-07', season: 'summer' },
-  { name: '大暑', nameEn: 'Major Heat', date: '07-22', season: 'summer' },
-  { name: '立秋', nameEn: 'Start of Autumn', date: '08-07', season: 'autumn' },
-  { name: '处暑', nameEn: 'End of Heat', date: '08-23', season: 'autumn' },
-  { name: '白露', nameEn: 'White Dew', date: '09-07', season: 'autumn' },
-  { name: '秋分', nameEn: 'Autumn Equinox', date: '09-23', season: 'autumn' },
-  { name: '寒露', nameEn: 'Cold Dew', date: '10-08', season: 'autumn' },
-  { name: '霜降', nameEn: 'Frost\'s Descent', date: '10-23', season: 'autumn' },
-  { name: '立冬', nameEn: 'Start of Winter', date: '11-07', season: 'winter' },
-  { name: '小雪', nameEn: 'Minor Snow', date: '11-22', season: 'winter' },
-  { name: '大雪', nameEn: 'Major Snow', date: '12-07', season: 'winter' },
-  { name: '冬至', nameEn: 'Winter Solstice', date: '12-21', season: 'winter' },
-  { name: '小寒', nameEn: 'Minor Cold', date: '01-05', season: 'winter' },
-  { name: '大寒', nameEn: 'Major Cold', date: '01-20', season: 'winter' }
+  { name: '大寒', nameEn: 'Major Cold', date: '01-20', season: 'winter', order: 0 },
+  { name: '立春', nameEn: 'Start of Spring', date: '02-04', season: 'spring', order: 1 },
+  { name: '雨水', nameEn: 'Rain Water', date: '02-19', season: 'spring', order: 2 },
+  { name: '惊蛰', nameEn: 'Awakening of Insects', date: '03-05', season: 'spring', order: 3 },
+  { name: '春分', nameEn: 'Spring Equinox', date: '03-20', season: 'spring', order: 4 },
+  { name: '清明', nameEn: 'Pure Brightness', date: '04-05', season: 'spring', order: 5 },
+  { name: '谷雨', nameEn: 'Grain Rain', date: '04-20', season: 'spring', order: 6 },
+  { name: '立夏', nameEn: 'Start of Summer', date: '05-05', season: 'summer', order: 7 },
+  { name: '小满', nameEn: 'Grain Buds', date: '05-21', season: 'summer', order: 8 },
+  { name: '芒种', nameEn: 'Grain in Ear', date: '06-05', season: 'summer', order: 9 },
+  { name: '夏至', nameEn: 'Summer Solstice', date: '06-21', season: 'summer', order: 10 },
+  { name: '小暑', nameEn: 'Minor Heat', date: '07-07', season: 'summer', order: 11 },
+  { name: '大暑', nameEn: 'Major Heat', date: '07-22', season: 'summer', order: 12 },
+  { name: '立秋', nameEn: 'Start of Autumn', date: '08-07', season: 'autumn', order: 13 },
+  { name: '处暑', nameEn: 'End of Heat', date: '08-23', season: 'autumn', order: 14 },
+  { name: '白露', nameEn: 'White Dew', date: '09-07', season: 'autumn', order: 15 },
+  { name: '秋分', nameEn: 'Autumn Equinox', date: '09-23', season: 'autumn', order: 16 },
+  { name: '寒露', nameEn: 'Cold Dew', date: '10-08', season: 'autumn', order: 17 },
+  { name: '霜降', nameEn: 'Frost\'s Descent', date: '10-23', season: 'autumn', order: 18 },
+  { name: '立冬', nameEn: 'Start of Winter', date: '11-07', season: 'winter', order: 19 },
+  { name: '小雪', nameEn: 'Minor Snow', date: '11-22', season: 'winter', order: 20 },
+  { name: '大雪', nameEn: 'Major Snow', date: '12-07', season: 'winter', order: 21 },
+  { name: '冬至', nameEn: 'Winter Solstice', date: '12-21', season: 'winter', order: 22 },
+  { name: '小寒', nameEn: 'Minor Cold', date: '01-05', season: 'winter', order: 23 }
 ];
 
 const SEASON_COLORS = {
@@ -44,7 +44,7 @@ function SolarTermsChart({ solarTermsData }) {
 
   const data = solarTermsData || SOLAR_TERMS.map((term, index) => ({
     ...term,
-    index,
+    index: term.order,
     totalAmount: Math.random() * 5000 + 500,
     transactionCount: Math.floor(Math.random() * 20) + 3
   }));
@@ -59,6 +59,7 @@ function SolarTermsChart({ solarTermsData }) {
     const height = 600;
     const centerX = width / 2;
     const centerY = height / 2;
+    const N = data.length;
 
     svg.attr('viewBox', `0 0 ${width} ${height}`)
        .attr('preserveAspectRatio', 'xMidYMid meet');
@@ -83,41 +84,57 @@ function SolarTermsChart({ solarTermsData }) {
     const maxAmount = Math.max(...data.map(d => d.totalAmount));
     const outerRadius = Math.min(width, height) / 2 - 60;
     const innerRadius = outerRadius * 0.5;
-    const barWidth = (2 * Math.PI) / data.length * 0.7;
+    const angleStep = (2 * Math.PI) / N;
+    const barWidth = angleStep * 0.7;
+
+    const getStartAngle = (i) => i * angleStep - Math.PI / 2 - barWidth / 2;
+    const getEndAngle = (i) => i * angleStep - Math.PI / 2 + barWidth / 2;
 
     const arc = d3.arc()
       .innerRadius(innerRadius)
       .outerRadius(d => innerRadius + (d.totalAmount / maxAmount) * (outerRadius - innerRadius))
-      .startAngle((d, i) => (i / data.length) * 2 * Math.PI - Math.PI / 2 - barWidth / 2)
-      .endAngle((d, i) => (i / data.length) * 2 * Math.PI - Math.PI / 2 + barWidth / 2)
+      .startAngle((d, i) => getStartAngle(i))
+      .endAngle((d, i) => getEndAngle(i))
       .padAngle(0.02)
       .padRadius(innerRadius);
 
     const mainGroup = svg.append('g')
       .attr('transform', `translate(${centerX}, ${centerY})`);
 
-    const seasonLabels = [
-      { name: '春', season: 'spring', startAngle: -Math.PI / 3, endAngle: Math.PI / 6 },
-      { name: '夏', season: 'summer', startAngle: Math.PI / 6, endAngle: 2 * Math.PI / 3 },
-      { name: '秋', season: 'autumn', startAngle: 2 * Math.PI / 3, endAngle: 7 * Math.PI / 6 },
-      { name: '冬', season: 'winter', startAngle: 7 * Math.PI / 6, endAngle: 5 * Math.PI / 3 }
-    ];
+    const seasonGroups = {};
+    data.forEach((d, i) => {
+      if (!seasonGroups[d.season]) {
+        seasonGroups[d.season] = [];
+      }
+      seasonGroups[d.season].push(i);
+    });
 
-    seasonLabels.forEach(season => {
-      const midAngle = (season.startAngle + season.endAngle) / 2;
-      const radius = outerRadius + 45;
-      const x = Math.cos(midAngle - Math.PI / 2) * radius;
-      const y = Math.sin(midAngle - Math.PI / 2) * radius;
+    const seasonLabels = Object.entries(seasonGroups).map(([season, indices]) => {
+      const minIdx = Math.min(...indices);
+      const maxIdx = Math.max(...indices);
+      const startAngle = getStartAngle(minIdx);
+      const endAngle = getEndAngle(maxIdx);
+      const midAngle = (startAngle + endAngle) / 2;
+      const seasonName = season === 'spring' ? '春' : 
+                        season === 'summer' ? '夏' : 
+                        season === 'autumn' ? '秋' : '冬';
+      return { name: seasonName, season, startAngle, endAngle, midAngle };
+    });
+
+    seasonLabels.forEach(sl => {
+      const labelRadius = outerRadius + 45;
+      const x = Math.cos(sl.midAngle) * labelRadius;
+      const y = Math.sin(sl.midAngle) * labelRadius;
       
       const seasonArc = d3.arc()
         .innerRadius(outerRadius + 25)
         .outerRadius(outerRadius + 30)
-        .startAngle(season.startAngle - Math.PI / 2)
-        .endAngle(season.endAngle - Math.PI / 2);
+        .startAngle(sl.startAngle)
+        .endAngle(sl.endAngle);
 
       mainGroup.append('path')
         .attr('d', seasonArc)
-        .attr('fill', SEASON_COLORS[season.season].main)
+        .attr('fill', SEASON_COLORS[sl.season].main)
         .attr('opacity', 0.8);
 
       mainGroup.append('text')
@@ -125,17 +142,17 @@ function SolarTermsChart({ solarTermsData }) {
         .attr('y', y)
         .attr('text-anchor', 'middle')
         .attr('dominant-baseline', 'middle')
-        .attr('fill', SEASON_COLORS[season.season].main)
+        .attr('fill', SEASON_COLORS[sl.season].main)
         .attr('font-size', '18px')
         .attr('font-weight', 'bold')
-        .text(season.name);
+        .text(sl.name);
     });
 
     const backgroundArc = d3.arc()
       .innerRadius(innerRadius)
       .outerRadius(outerRadius)
-      .startAngle((d, i) => (i / data.length) * 2 * Math.PI - Math.PI / 2 - barWidth / 2)
-      .endAngle((d, i) => (i / data.length) * 2 * Math.PI - Math.PI / 2 + barWidth / 2);
+      .startAngle((d, i) => getStartAngle(i))
+      .endAngle((d, i) => getEndAngle(i));
 
     mainGroup.selectAll('.background-arc')
       .data(data)
@@ -184,7 +201,7 @@ function SolarTermsChart({ solarTermsData }) {
       });
 
     termLabels.each(function(d, i) {
-      const angle = (i / data.length) * 2 * Math.PI - Math.PI / 2;
+      const angle = i * angleStep - Math.PI / 2;
       const labelRadius = innerRadius * 0.7;
       const x = Math.cos(angle) * labelRadius;
       const y = Math.sin(angle) * labelRadius;
@@ -220,32 +237,34 @@ function SolarTermsChart({ solarTermsData }) {
       .attr('stroke-width', 2);
 
     if (selectedTerm !== null) {
-      const term = data[selectedTerm];
-      mainGroup.append('text')
-        .attr('text-anchor', 'middle')
-        .attr('dominant-baseline', 'middle')
-        .attr('y', -15)
-        .attr('fill', '#ffffff')
-        .attr('font-size', '20px')
-        .attr('font-weight', 'bold')
-        .text(term.name);
-      
-      mainGroup.append('text')
-        .attr('text-anchor', 'middle')
-        .attr('dominant-baseline', 'middle')
-        .attr('y', 10)
-        .attr('fill', SEASON_COLORS[term.season].main)
-        .attr('font-size', '16px')
-        .attr('font-weight', 'bold')
-        .text(`¥${term.totalAmount.toLocaleString()}`);
-      
-      mainGroup.append('text')
-        .attr('text-anchor', 'middle')
-        .attr('dominant-baseline', 'middle')
-        .attr('y', 32)
-        .attr('fill', '#94a3b8')
-        .attr('font-size', '11px')
-        .text(`${term.transactionCount} 笔交易`);
+      const term = data.find(d => d.index === selectedTerm) || data[selectedTerm];
+      if (term) {
+        mainGroup.append('text')
+          .attr('text-anchor', 'middle')
+          .attr('dominant-baseline', 'middle')
+          .attr('y', -15)
+          .attr('fill', '#ffffff')
+          .attr('font-size', '20px')
+          .attr('font-weight', 'bold')
+          .text(term.name);
+        
+        mainGroup.append('text')
+          .attr('text-anchor', 'middle')
+          .attr('dominant-baseline', 'middle')
+          .attr('y', 10)
+          .attr('fill', SEASON_COLORS[term.season].main)
+          .attr('font-size', '16px')
+          .attr('font-weight', 'bold')
+          .text(`¥${term.totalAmount.toLocaleString()}`);
+        
+        mainGroup.append('text')
+          .attr('text-anchor', 'middle')
+          .attr('dominant-baseline', 'middle')
+          .attr('y', 32)
+          .attr('fill', '#94a3b8')
+          .attr('font-size', '11px')
+          .text(`${term.transactionCount} 笔交易`);
+      }
     } else {
       mainGroup.append('text')
         .attr('text-anchor', 'middle')

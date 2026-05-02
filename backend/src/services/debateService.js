@@ -25,13 +25,60 @@ class DebateService {
       content: systemPrompt
     });
     
-    session.messages.push({
-      role: 'assistant',
-      content: this.getOpeningMessage(anomaly)
-    });
-    
     this.sessions.set(sessionId, session);
     return session;
+  }
+
+  async generateOpeningMessage(sessionId) {
+    const session = this.sessions.get(sessionId);
+    if (!session) {
+      throw new Error('会话不存在');
+    }
+
+    const openingRequest = this.getOpeningRequest(session.anomaly);
+    session.messages.push({
+      role: 'user',
+      content: openingRequest
+    });
+
+    try {
+      const response = await llmService.generateChatCompletion(
+        session.messages,
+        {
+          provider: session.config.provider,
+          temperature: 0.85,
+          max_tokens: 1024
+        }
+      );
+
+      session.messages.push({
+        role: 'assistant',
+        content: response.content
+      });
+
+      return {
+        sessionId: sessionId,
+        message: {
+          role: 'assistant',
+          content: response.content,
+          timestamp: new Date()
+        }
+      };
+    } catch (error) {
+      const fallback = this.getFallbackOpening(session.anomaly);
+      session.messages.push({
+        role: 'assistant',
+        content: fallback
+      });
+      return {
+        sessionId: sessionId,
+        message: {
+          role: 'assistant',
+          content: fallback,
+          timestamp: new Date()
+        }
+      };
+    }
   }
 
   getSystemPrompt(anomaly) {
@@ -75,66 +122,67 @@ ${context}
 - 语气像一位严格但关心用户的财务教练`;
   }
 
-  getOpeningMessage(anomaly) {
+  getOpeningRequest(anomaly) {
+    if (anomaly.type === 'zscore_outlier') {
+      const amount = anomaly.transaction.amount.toFixed(2);
+      const description = anomaly.transaction.description || '未提供描述';
+      const category = anomaly.transaction.category || '未分类';
+      const meanVal = anomaly.transaction.mean?.toFixed(2) || '未知';
+      const zVal = anomaly.transaction.zScore?.toFixed(2) || '未知';
+      
+      return `请立即对以下异常消费进行个性化审查，直接给出你的审查意见。不要使用模板化语言，要像一位真实的财务教练在审视一笔具体消费那样说话。
+
+消费详情：
+- 金额：¥${amount}
+- 描述：${description}
+- 类别：${category}
+- Z-score：${zVal}（远超正常范围）
+- 历史均值：¥${meanVal}
+
+请从以下角度给出你的个性化审查：
+1. 针对这笔具体消费的质疑（不要泛泛而谈）
+2. 指出最可能存在的1-2个逻辑谬误（结合消费描述判断）
+3. 用一个犀利但真诚的反问结束
+
+注意：语气要像真人，不要用列表模板，不要用emoji标题行。`;
+    } else if (anomaly.type === 'latte_factor') {
+      const category = anomaly.category || '未知类别';
+      const totalAmount = anomaly.data.totalAmount.toFixed(2);
+      const percentage = (anomaly.data.percentage * 100).toFixed(1);
+      const count = anomaly.data.transactionCount;
+      const examples = anomaly.data.transactions?.slice(0, 3).map(t => t.description).join('、') || '无';
+      
+      return `请立即对以下拿铁因子消费类别进行个性化审查，直接给出你的审查意见。不要使用模板化语言，要像一位真实的财务教练在审视一种消费习惯那样说话。
+
+消费类别详情：
+- 类别：${category}
+- 总支出：¥${totalAmount}
+- 占总支出比例：${percentage}%
+- 交易笔数：${count}
+- 典型消费：${examples}
+
+请从以下角度给出你的个性化审查：
+1. 针对这个具体类别的质疑（结合典型消费示例判断）
+2. 揭示这种消费模式最可能的逻辑陷阱
+3. 用一个让人深思的反问结束
+
+注意：语气要像真人，不要用列表模板，不要用emoji标题行。`;
+    }
+    
+    return '请对这笔消费进行审查。';
+  }
+
+  getFallbackOpening(anomaly) {
     if (anomaly.type === 'zscore_outlier') {
       const amount = anomaly.transaction.amount.toFixed(2);
       const description = anomaly.transaction.description || '这笔消费';
-      
-      return `🎯 消费逻辑审查启动
-
-📌 异常类型：大额支出 (Z-score 异常)
-💰 金额：¥${amount}
-📝 描述：${description}
-
----
-
-让我仔细审查这笔消费的逻辑。
-
-**问题分析**：这笔支出明显高于你的平均消费水平。根据历史数据，你的平均单笔支出约为 ¥${anomaly.transaction.mean?.toFixed(2) || '未知'}，而这笔消费是平均值的 ${((anomaly.transaction.amount / anomaly.transaction.mean) * 100).toFixed(0)}%。
-
-**潜在逻辑谬误**：
-1. **即时满足偏差**：你是否因为一时冲动而购买？
-2. **锚定效应**：是否因为"打折"或"限时优惠"而觉得划算？
-3. **机会成本忽视**：这笔钱如果存下来，未来能做什么？
-
-**反思引导**：
-- 这笔购买是"需要"还是"想要"？
-- 如果推迟72小时，你还会买吗？
-- 同样金额的钱，有什么其他更好的用途？
-
-请告诉我你当时的消费决策过程，我会帮你进一步分析。`;
+      return `我注意到了一笔需要审查的消费——${description}，金额 ¥${amount}。这个数字明显高于你的日常消费水平，我想听听你做这个决定时的想法。是真正需要，还是某个瞬间觉得"应该买"？`;
     } else if (anomaly.type === 'latte_factor') {
-      return `🎯 消费逻辑审查启动
-
-📌 异常类型：拿铁因子
-🏷️ 类别：${anomaly.category}
-💰 总支出：¥${anomaly.data.totalAmount.toFixed(2)}
-📊 占比：${(anomaly.data.percentage * 100).toFixed(1)}%
-🔄 交易笔数：${anomaly.data.transactionCount}
-
----
-
-让我仔细审查这个消费类别的逻辑。
-
-**问题分析**：这是典型的"拿铁因子"——看似小额但高频的消费，积少成多。
-- 单看每一笔可能觉得"没多少钱"
-- 但累积起来是一笔可观的数目
-- 每月 ¥${(anomaly.data.totalAmount / 3).toFixed(0)}，每年就是 ¥${(anomaly.data.totalAmount * 4).toFixed(0)}
-
-**潜在逻辑谬误**：
-1. **小钱效应**：认为单笔金额小就无所谓
-2. **习惯成自然**：变成无意识的例行消费
-3. **心理账户偏差**：把这些小钱放在"无关紧要"的账户里
-
-**反思引导**：
-- 这些消费真的让你快乐吗？还是只是习惯？
-- 如果减少一半，生活质量会下降吗？
-- 一年省下的钱能做什么更有价值的事？
-
-请告诉我你对这些消费的真实感受，我会帮你进一步分析。`;
+      const category = anomaly.category || '这个类别';
+      const totalAmount = anomaly.data.totalAmount.toFixed(2);
+      return `${category}的累计支出达到了 ¥${totalAmount}，这个数字可能比你直觉感受到的要大。我想了解一下，这些消费中有多少是你真正享受的，有多少只是习惯使然？`;
     }
-    
-    return '审查已启动，请描述这笔消费的背景。';
+    return '请告诉我这笔消费的背景，我来帮你审查。';
   }
 
   async sendMessage(sessionId, userMessage) {
