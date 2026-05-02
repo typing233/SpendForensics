@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const debateService = require('../services/debateService');
 
-router.post('/start', (req, res) => {
+router.post('/start', async (req, res) => {
   try {
     const { anomaly, config } = req.body;
     
@@ -15,6 +15,8 @@ router.post('/start', (req, res) => {
     }
 
     const session = debateService.createSession(anomaly, config);
+    
+    const openingResult = await debateService.generateOpeningMessage(session.id);
     
     res.json({
       sessionId: session.id,

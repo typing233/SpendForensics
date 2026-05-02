@@ -150,46 +150,61 @@ class AnalysisService {
 
   getSolarTerms() {
     return [
-      { name: '立春', nameEn: 'Start of Spring', date: '02-04' },
-      { name: '雨水', nameEn: 'Rain Water', date: '02-19' },
-      { name: '惊蛰', nameEn: 'Awakening of Insects', date: '03-05' },
-      { name: '春分', nameEn: 'Spring Equinox', date: '03-20' },
-      { name: '清明', nameEn: 'Pure Brightness', date: '04-05' },
-      { name: '谷雨', nameEn: 'Grain Rain', date: '04-20' },
-      { name: '立夏', nameEn: 'Start of Summer', date: '05-05' },
-      { name: '小满', nameEn: 'Grain Buds', date: '05-21' },
-      { name: '芒种', nameEn: 'Grain in Ear', date: '06-05' },
-      { name: '夏至', nameEn: 'Summer Solstice', date: '06-21' },
-      { name: '小暑', nameEn: 'Minor Heat', date: '07-07' },
-      { name: '大暑', nameEn: 'Major Heat', date: '07-22' },
-      { name: '立秋', nameEn: 'Start of Autumn', date: '08-07' },
-      { name: '处暑', nameEn: 'End of Heat', date: '08-23' },
-      { name: '白露', nameEn: 'White Dew', date: '09-07' },
-      { name: '秋分', nameEn: 'Autumn Equinox', date: '09-23' },
-      { name: '寒露', nameEn: 'Cold Dew', date: '10-08' },
-      { name: '霜降', nameEn: 'Frost\'s Descent', date: '10-23' },
-      { name: '立冬', nameEn: 'Start of Winter', date: '11-07' },
-      { name: '小雪', nameEn: 'Minor Snow', date: '11-22' },
-      { name: '大雪', nameEn: 'Major Snow', date: '12-07' },
-      { name: '冬至', nameEn: 'Winter Solstice', date: '12-21' },
-      { name: '小寒', nameEn: 'Minor Cold', date: '01-05' },
-      { name: '大寒', nameEn: 'Major Cold', date: '01-20' }
+      { name: '大寒', nameEn: 'Major Cold', date: '01-20', season: 'winter', order: 0 },
+      { name: '立春', nameEn: 'Start of Spring', date: '02-04', season: 'spring', order: 1 },
+      { name: '雨水', nameEn: 'Rain Water', date: '02-19', season: 'spring', order: 2 },
+      { name: '惊蛰', nameEn: 'Awakening of Insects', date: '03-05', season: 'spring', order: 3 },
+      { name: '春分', nameEn: 'Spring Equinox', date: '03-20', season: 'spring', order: 4 },
+      { name: '清明', nameEn: 'Pure Brightness', date: '04-05', season: 'spring', order: 5 },
+      { name: '谷雨', nameEn: 'Grain Rain', date: '04-20', season: 'spring', order: 6 },
+      { name: '立夏', nameEn: 'Start of Summer', date: '05-05', season: 'summer', order: 7 },
+      { name: '小满', nameEn: 'Grain Buds', date: '05-21', season: 'summer', order: 8 },
+      { name: '芒种', nameEn: 'Grain in Ear', date: '06-05', season: 'summer', order: 9 },
+      { name: '夏至', nameEn: 'Summer Solstice', date: '06-21', season: 'summer', order: 10 },
+      { name: '小暑', nameEn: 'Minor Heat', date: '07-07', season: 'summer', order: 11 },
+      { name: '大暑', nameEn: 'Major Heat', date: '07-22', season: 'summer', order: 12 },
+      { name: '立秋', nameEn: 'Start of Autumn', date: '08-07', season: 'autumn', order: 13 },
+      { name: '处暑', nameEn: 'End of Heat', date: '08-23', season: 'autumn', order: 14 },
+      { name: '白露', nameEn: 'White Dew', date: '09-07', season: 'autumn', order: 15 },
+      { name: '秋分', nameEn: 'Autumn Equinox', date: '09-23', season: 'autumn', order: 16 },
+      { name: '寒露', nameEn: 'Cold Dew', date: '10-08', season: 'autumn', order: 17 },
+      { name: '霜降', nameEn: 'Frost\'s Descent', date: '10-23', season: 'autumn', order: 18 },
+      { name: '立冬', nameEn: 'Start of Winter', date: '11-07', season: 'winter', order: 19 },
+      { name: '小雪', nameEn: 'Minor Snow', date: '11-22', season: 'winter', order: 20 },
+      { name: '大雪', nameEn: 'Major Snow', date: '12-07', season: 'winter', order: 21 },
+      { name: '冬至', nameEn: 'Winter Solstice', date: '12-21', season: 'winter', order: 22 },
+      { name: '小寒', nameEn: 'Minor Cold', date: '01-05', season: 'winter', order: 23 }
     ];
   }
 
   findSolarTerm(date, solarTerms) {
-    const monthDay = `${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-    
+    const month = date.getMonth() + 1;
+    const day = date.getDate();
+    const dayOfYear = month * 100 + day;
+
+    let bestTerm = solarTerms[0];
+    let bestTermDayOfYear = this._dateToDayOfYear(solarTerms[0].date);
+
     for (let i = 0; i < solarTerms.length; i++) {
-      if (monthDay >= solarTerms[i].date) {
-        const nextIndex = (i + 1) % solarTerms.length;
-        if (i === solarTerms.length - 1 || monthDay < solarTerms[nextIndex].date) {
-          return { ...solarTerms[i], index: i };
+      const termDayOfYear = this._dateToDayOfYear(solarTerms[i].date);
+      
+      if (termDayOfYear <= dayOfYear) {
+        if (termDayOfYear >= bestTermDayOfYear || bestTermDayOfYear > dayOfYear) {
+          bestTerm = solarTerms[i];
+          bestTermDayOfYear = termDayOfYear;
         }
+      } else if (bestTermDayOfYear > dayOfYear && termDayOfYear < bestTermDayOfYear) {
+        bestTerm = solarTerms[i];
+        bestTermDayOfYear = termDayOfYear;
       }
     }
-    
-    return { ...solarTerms[solarTerms.length - 1], index: solarTerms.length - 1 };
+
+    return { ...bestTerm, index: bestTerm.order };
+  }
+
+  _dateToDayOfYear(dateStr) {
+    const [month, day] = dateStr.split('-').map(Number);
+    return month * 100 + day;
   }
 }
 
